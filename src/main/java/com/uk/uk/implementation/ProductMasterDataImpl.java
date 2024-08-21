@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.uk.uk.entity.ProductMasterDataDAO;
 import com.uk.uk.repository.ProductMasterDataRepo;
+import com.uk.uk.repository.PricingInsightsRepo;
 
 
 import java.util.ArrayList;
@@ -19,6 +20,8 @@ import java.util.concurrent.CompletableFuture;
 public class ProductMasterDataImpl {
     @Autowired
     private ProductMasterDataRepo ProductMasterDataRepo;
+    @Autowired
+    private PricingInsightsRepo PricingInsightsRepo;
     @Autowired
     private AsdaImpl AsdaImpl;
     @Autowired
@@ -147,20 +150,29 @@ public class ProductMasterDataImpl {
 
     public Boolean updateProductMasterByTag(List<ProductMasterDataDAO> ProductMasterDataDAOList) throws InterruptedException {
         Boolean updateStatus = false;
+        Boolean runScrap = true;
 
         if (ProductMasterDataDAOList.size() > 0) {
             for (ProductMasterDataDAO productMasterData : ProductMasterDataDAOList) {
 
-                //Check the shop name is exists already if yes call the update query, else call insert query
+                //Check the shop name is existing already if yes call the update query, else call insert query
 
                 ProductMasterDataDAO productMasterDataByShopNameAndTag = ProductMasterDataRepo.getProductMasterDataByShopNameAndTag(
                         productMasterData.getShopName(), productMasterData.getTag()
                 );
 
                 if (null != productMasterDataByShopNameAndTag) {
-                    ProductMasterDataRepo.updateProductMasterData(productMasterData.getTag(), productMasterData.getProductName(),
-                            productMasterData.getQuantity(), productMasterData.getMeasurement(), productMasterData.getUrl(),
-                            productMasterData.getCategory(), productMasterData.getShopName());
+
+                    if (productMasterData.getUrl().isEmpty()) {
+                        ProductMasterDataRepo.deleteProductMasterByNo(productMasterData.getShopName());
+                        PricingInsightsRepo.deletePricingInsightsByNo(productMasterDataByShopNameAndTag.getNo());
+                        runScrap = false;
+                    } else {
+                        ProductMasterDataRepo.updateProductMasterData(productMasterData.getTag(), productMasterData.getProductName(),
+                                productMasterData.getQuantity(), productMasterData.getMeasurement(), productMasterData.getUrl(),
+                                productMasterData.getCategory(), productMasterData.getShopName());
+                    }
+
                 } else {
                     ProductMasterDataRepo.insertProductMasterData(productMasterData.getProductName(), productMasterData.getQuantity(),
                             productMasterData.getMeasurement(), productMasterData.getShopName(), productMasterData.getUrl(),
@@ -170,54 +182,18 @@ public class ProductMasterDataImpl {
                 String shopName = productMasterData.getShopName();
 
 
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        insertPricingInsightsShopWise(shopName, productMasterData);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-
+                if (runScrap) {
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            insertPricingInsightsShopWise(shopName, productMasterData);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
 
                 System.out.println(shopName + "SHOP NAME");
 
-//                switch (shopName) {
-//                    case "Morrisons":
-//                        MorrisonsImpl.insertPricingInsights(productMasterData);
-//                        break;
-//                    case "Sainsburys":
-//                    case "Tesco":
-//                    case "WaitRose":
-//                    case "Amazon":
-//
-//                        FirefoxOptions options = new FirefoxOptions();
-//                        options.addArguments("-headless"); // Add headless argument
-//
-//                        WebDriver driver = new FirefoxDriver(options);
-//
-//                        if (shopName.equalsIgnoreCase("Sainsburys"))
-//                            SainsburysImpl.insertPricingInsights(productMasterData, driver, 0);
-//                        else if (shopName.equalsIgnoreCase("Tesco"))
-//                            TescoImpl.insertPricingInsights(productMasterData, driver);
-//                        else if (shopName.equalsIgnoreCase("WaitRose"))
-//                            WaitRoseImpl.insertPricingInsights(productMasterData, driver, 0);
-//                        else
-//                            AmazonTempImpl.insertPricingInsights(driver, 0, productMasterData);
-//                        driver.close();
-//                        break;
-////                case "Amazon":
-////                    AmazonTempImpl.insertPricingInsights(driver, 0, productMasterData);
-////                    break;
-//                    case "Ocado":
-//                        OcadoImpl.insertPricingInsights(productMasterData);
-//                        break;
-//                    case "CoOp":
-//                        CoOpImpl.insertPricingInsights(productMasterData);
-//                        break;
-//                    case "ASDA":
-//                        AsdaImpl.insertPricingInsights(productMasterData);
-//                        break;
-//                }
             }
             updateStatus = true;
         }

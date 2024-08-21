@@ -48,8 +48,8 @@ public class Controller {
     @Autowired
     private AmazonTempImpl AmazonTempImpl;
 
-    @Autowired
-    EmailService mailService;
+//    @Autowired
+//    EmailService mailService;
 
     @Autowired
     TempUserRepo TempRepo;
@@ -125,7 +125,7 @@ public class Controller {
             return new ResponseEntity<>("already_exist", HttpStatus.OK);
         }
         else{
-            mailService.sendSimpleEmail(to, subject, text);
+//            mailService.sendSimpleEmail(to, subject, text);
         }
         List <TempUser> user = TempRepo.findByUserEmail(to);
         if(user.isEmpty()){
@@ -210,7 +210,7 @@ public class Controller {
         String subject = "Your OTP Code";
         String text = "Hello " + to + ", " + "Your One-Time Password (OTP) code is: ["+ otp +"] "
                 + "Please do not share this OTP with anyone for security reasons. " + "Thanks.";
-        mailService.sendSimpleEmail(to, subject, text);
+//        mailService.sendSimpleEmail(to, subject, text);
         AuthEntity user = authRepository.findByUserEmail(to);
         user.setTempOtp(otp);
         authRepository.save(user);

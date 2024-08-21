@@ -25,5 +25,10 @@ public interface PricingInsightsRepo extends JpaRepository<PricingInsightsDAO, I
     @Transactional
     void deletePricingInsightsByTag(Integer tag);
 
+    @Modifying
+    @Query(value = "delete from PricingInsights where No=?1", nativeQuery = true)
+    @Transactional
+    void deletePricingInsightsByNo(Integer no);
+
 
 }

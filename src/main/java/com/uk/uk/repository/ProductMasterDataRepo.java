@@ -44,4 +44,9 @@ public interface ProductMasterDataRepo extends JpaRepository<ProductMasterDataDA
     @Transactional
     void updateTagStatus(Integer tagStatus);
 
+    @Modifying
+    @Query(value = "delete from ProductMasterData where ShopName=?1", nativeQuery = true)
+    @Transactional
+    void deleteProductMasterByNo(String shopName);
+
 }
